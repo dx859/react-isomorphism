@@ -40,9 +40,6 @@ if (isDevelopment) {
       errors: true,
     },
     publicPath: '/public/',
-    historyApiFallback: {
-      index: '/public/index.html',
-    },
   };
 }
 

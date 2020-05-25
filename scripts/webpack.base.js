@@ -1,112 +1,53 @@
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const paths = require('./paths');
 const path = require('path');
+const webpack = require('webpack');
+const nodeExternals = require('webpack-node-externals');
+const LoadablePlugin = require('@loadable/webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-const isProduction = process.env.NODE_ENV === 'production';
-const modifyVars = {};
+const DIST_PATH = path.resolve(__dirname, '../public/dist');
+const production = process.env.NODE_ENV === 'production';
+const development = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 
-const getStyleLoaders = (isServer, preProcessor, loadOpts = {}, isModules = true) => {
-  const loaders = [
-    isServer && 'isomorphic-style-loader',
-    !isServer && (isProduction ? MiniCssExtractPlugin.loader : 'style-loader'),
-    {
-      loader: 'css-loader',
-      options: {
-        importLoaders: 1,
-        modules: isModules
-          ? {
-              mode: 'local',
-              localIdentName: '[local]_[hash:6]',
-            }
-          : undefined,
-      },
-    },
-    {
-      loader: 'postcss-loader',
-      options: {
-        ident: 'postcss',
-        plugins: () => [
-          require('postcss-flexbugs-fixes'),
-          require('postcss-preset-env')({
-            autoprefixer: {
-              flexbox: 'no-2009',
-            },
-            stage: 3,
-          }),
-        ],
-      },
-    },
-  ].filter(Boolean);
-  if (preProcessor) {
-    loaders.push({
-      loader: preProcessor,
-      options: loadOpts,
-    });
-  }
-  return loaders;
-};
-
-module.exports = function (isServer = false) {
-  return {
-    mode: isProduction ? 'production' : 'development',
-    devtool: isProduction ? false : 'cheap-module-source-map',
-    module: {
-      rules: [
-        {
-          test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
-          loader: 'url-loader',
-          options: {
-            limit: 10000,
-            name: 'assets/[name].[hash:8].[ext]',
-            publicPath: isProduction ? '/' : '/public/',
-          },
-        },
-        {
-          test: /\.js$/,
-          // exclude: paths.nodeModulesPath,
+const getConfig = (target) => ({
+  name: target,
+  mode: development ? 'development' : 'production',
+  target,
+  entry: [`./client/main-${target}.js`].filter(Boolean),
+  module: {
+    rules: [
+      {
+        test: /\.js?$/,
+        exclude: /node_modules/,
+        use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/env', '@babel/preset-react'],
-            plugins: [
-              '@babel/plugin-proposal-class-properties',
-              // isServer ? false : ['import', { libraryName: 'antd', style: true }],
-            ].filter(Boolean),
+            caller: { target },
           },
         },
-        {
-          test: /\.css$/,
-          include: paths.clientPath,
-          use: getStyleLoaders(isServer),
-        },
-        {
-          test: /\.less$/,
-          include: paths.nodeModulesPath,
-          use: getStyleLoaders(
-            isServer,
-            'less-loader',
-            {
-              javascriptEnabled: true,
-              modifyVars: modifyVars,
-            },
-            false,
-          ),
-        },
-        {
-          test: /\.less$/,
-          include: paths.clientPath,
-          use: getStyleLoaders(isServer, 'less-loader', {
-            javascriptEnabled: true,
-            modifyVars: modifyVars,
-          }),
-        },
-      ],
-    },
-    plugins: [
-      new MiniCssExtractPlugin({
-        // Options similar to the same options in webpackOptions.output
-        // both options are optional
-        filename: 'css/[name].[hash:8].css',
-      }),
+      },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+          },
+          'css-loader',
+        ],
+      },
     ],
-  };
-};
+  },
+  externals: target === 'node' ? ['@loadable/component', nodeExternals()] : undefined,
+  output: {
+    path: path.join(DIST_PATH, target),
+    filename: production ? '[name]-bundle-[chunkhash:8].js' : '[name].js',
+    publicPath: `/dist/${target}/`,
+    libraryTarget: target === 'node' ? 'commonjs2' : undefined,
+  },
+  plugins: [
+    new LoadablePlugin(),
+    new MiniCssExtractPlugin(),
+    production ? undefined : new webpack.HotModuleReplacementPlugin(),
+  ].filter(Boolean),
+});
+
+module.exports = [getConfig('web'), getConfig('node')];
