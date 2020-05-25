@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev:client": "cross-env NODE_ENV=development webpack-dev-server --config scripts/webpack.client.js",
+    "dev:server": "cross-env NODE_ENV=development nodemon --watch server server/index.js",
     "dev": "nodemon server/index.js"
   },
   "repository": {
