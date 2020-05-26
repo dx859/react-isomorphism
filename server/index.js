@@ -1,5 +1,5 @@
-const express = require('express');
-const app = express();
+const Koa = require('koa');
+const app = new Koa();
 
 if (process.env.NODE_ENV !== 'production') {
   require('./util/devSSR')(app);

@@ -9,6 +9,7 @@ function serverRender(template, opts = {}) {
     style: '', // helmet.style.toString(),
     link: '', //helmet.link.toString(),
     materialCss: '', // sheetsRegistry.toString()
+    initialState: JSON.stringify({}),
   };
   return ejs.render(template, Object.assign(defaultOpts, opts));
 }
