@@ -14,6 +14,10 @@ const config = {
     new HtmlWebpackPlugin({
       template: paths.clientIndexHtmlPath,
     }),
+    new HtmlWebpackPlugin({
+      template: '!!ejs-webpack-loader!' + paths.serverIndexHtmlPath,
+      filename: 'server.ejs',
+    }),
   ],
 };
 

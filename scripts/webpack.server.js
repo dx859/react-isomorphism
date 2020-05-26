@@ -7,15 +7,10 @@ const config = {
   entry: paths.serverIndexJsPath,
   output: {
     path: paths.serverBuild,
-    filename: '[name].[hash:8].js',
-    publicPath: '/public/',
+    filename: '[name].js',
+    // publicPath: '/public/',
+    libraryTarget: 'commonjs2',
   },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: '!!ejs-webpack-loader!' + paths.serverIndexHtmlPath,
-      filename: 'server.ejs',
-    }),
-  ],
 };
 
-module.exports = merge(require('./webpack.base')(), config);
+module.exports = merge(require('./webpack.base')('node'), config);
